@@ -1,0 +1,141 @@
+// ===========================================================================
+// DAX measures for the Olist dashboard (Power BI)
+// Create a table "_Measures" (Home > Enter data, empty) and add each measure there.
+//
+// RELATIONSHIPS (all one-to-many, single direction, from dimension / "one" side to fact):
+//   dim_date[date_key]                 -> fact_orders[purchase_date]
+//   dim_customer[customer_unique_id]   -> fact_orders[customer_unique_id]
+//   fact_orders[order_id]              -> fact_order_items[order_id]
+//   dim_product[product_id]            -> fact_order_items[product_id]
+//   dim_seller[seller_id]              -> fact_order_items[seller_id]
+//
+// RULES
+//  * Order-level measures use fact_orders. Category / seller measures use fact_order_items.
+//  * Never SUM order_value or payment_value on fact_order_items (it would duplicate multi-item orders).
+//  * Do NOT filter nullable columns with "= 0" or "<= 2": DAX treats BLANK as 0.
+//    Use the has_delivery / has_review flags and the review_group text column instead.
+// ===========================================================================
+
+// ------------------------------------------------------------ volume and value
+All Orders = COUNTROWS ( fact_orders )
+
+Valid Orders =
+CALCULATE ( COUNTROWS ( fact_orders ), fact_orders[is_valid_order] = 1 )
+
+Sales (Items) =
+CALCULATE ( SUM ( fact_orders[items_value] ), fact_orders[is_valid_order] = 1 )
+
+Freight Revenue =
+CALCULATE ( SUM ( fact_orders[freight_value] ), fact_orders[is_valid_order] = 1 )
+
+Order Value = [Sales (Items)] + [Freight Revenue]
+
+AOV = DIVIDE ( [Order Value], [Valid Orders] )
+
+Unique Customers =
+CALCULATE ( DISTINCTCOUNT ( fact_orders[customer_unique_id] ), fact_orders[is_valid_order] = 1 )
+
+Repeat Customers =
+CALCULATE (
+    DISTINCTCOUNT ( fact_orders[customer_unique_id] ),
+    fact_orders[is_valid_order] = 1,
+    fact_orders[customer_type] = "Repeat"
+)
+
+Repeat Customer Rate = DIVIDE ( [Repeat Customers], [Unique Customers] )
+
+Orders per Customer = DIVIDE ( [Valid Orders], [Unique Customers] )
+
+Order Status % =
+DIVIDE ( [All Orders], CALCULATE ( [All Orders], ALL ( fact_orders[order_status] ) ) )
+
+// ------------------------------------------------------------ time intelligence
+Sales (Items) PM =
+CALCULATE ( [Sales (Items)], DATEADD ( dim_date[date_key], -1, MONTH ) )
+
+Sales MoM % = DIVIDE ( [Sales (Items)] - [Sales (Items) PM], [Sales (Items) PM] )
+
+// ------------------------------------------------------------ delivery
+Delivered Orders =
+CALCULATE ( COUNTROWS ( fact_orders ), fact_orders[has_delivery] = 1 )
+
+Late Orders =
+CALCULATE ( COUNTROWS ( fact_orders ), fact_orders[is_late] = 1 )
+
+Late Delivery % = DIVIDE ( [Late Orders], [Delivered Orders] )
+
+On-Time Delivery % = DIVIDE ( [Delivered Orders] - [Late Orders], [Delivered Orders] )
+
+Avg Delivery Days = AVERAGE ( fact_orders[delivery_days] )
+
+Avg Estimated Days = CALCULATE ( AVERAGE ( fact_orders[estimated_days] ), fact_orders[has_delivery] = 1 )
+
+Avg Days Late (late orders only) =
+CALCULATE ( AVERAGE ( fact_orders[delay_days] ), fact_orders[is_late] = 1 )
+
+// ------------------------------------------------------------ customer experience
+Avg Review Score = AVERAGE ( fact_orders[review_score] )
+
+Reviewed Orders = CALCULATE ( COUNTROWS ( fact_orders ), fact_orders[has_review] = 1 )
+
+Negative Review % =
+DIVIDE (
+    CALCULATE ( COUNTROWS ( fact_orders ), fact_orders[review_group] = "Negative (1-2)" ),
+    [Reviewed Orders]
+)
+
+// ------------------------------------------------------------ product / seller (item grain)
+Item Sales =
+CALCULATE ( SUM ( fact_order_items[price] ), fact_order_items[is_valid_order] = 1 )
+
+Item Orders (weighted) =
+CALCULATE ( SUM ( fact_order_items[order_weight] ), fact_order_items[is_valid_order] = 1 )
+
+Avg Order Value in Selection (item grain) =
+DIVIDE (
+    CALCULATE ( SUM ( fact_order_items[item_value] ), fact_order_items[is_valid_order] = 1 ),
+    [Item Orders (weighted)]
+)
+
+Avg Review (item grain) =
+DIVIDE (
+    SUMX ( fact_order_items, fact_order_items[review_score] * fact_order_items[order_weight] ),
+    CALCULATE ( SUM ( fact_order_items[order_weight] ), fact_order_items[has_review] = 1 )
+)
+
+Late % (item grain) =
+DIVIDE (
+    CALCULATE ( SUM ( fact_order_items[order_weight] ), fact_order_items[is_late] = 1 ),
+    CALCULATE ( SUM ( fact_order_items[order_weight] ), fact_order_items[has_delivery] = 1 )
+)
+
+Sales Share % =
+DIVIDE ( [Item Sales], CALCULATE ( [Item Sales], ALLSELECTED () ) )
+
+// Cumulative share for a Pareto chart. Put dim_seller[seller_id] (or dim_product[category_en]) on the axis,
+// sorted by [Item Sales] descending.
+Cumulative Sales % (Seller) =
+VAR CurrentSales = [Item Sales]
+VAR AllSellers =
+    ADDCOLUMNS ( ALLSELECTED ( dim_seller[seller_id] ), "@Sales", [Item Sales] )
+VAR CumSales = SUMX ( FILTER ( AllSellers, [@Sales] >= CurrentSales ), [@Sales] )
+VAR TotalSales = SUMX ( AllSellers, [@Sales] )
+RETURN DIVIDE ( CumSales, TotalSales )
+
+Cumulative Sales % (Category) =
+VAR CurrentSales = [Item Sales]
+VAR AllCats =
+    ADDCOLUMNS ( ALLSELECTED ( dim_product[category_en] ), "@Sales", [Item Sales] )
+VAR CumSales = SUMX ( FILTER ( AllCats, [@Sales] >= CurrentSales ), [@Sales] )
+VAR TotalSales = SUMX ( AllCats, [@Sales] )
+RETURN DIVIDE ( CumSales, TotalSales )
+
+// ------------------------------------------------------------ dynamic insight text (card / text box)
+Insight: Late vs On-Time Review =
+VAR LateAvg =
+    CALCULATE ( [Avg Review Score], fact_orders[is_late] = 1 )
+VAR OnTimeAvg =
+    CALCULATE ( [Avg Review Score], fact_orders[is_late] = 0, fact_orders[has_delivery] = 1 )
+RETURN
+    "Late orders score " & FORMAT ( LateAvg, "0.00" ) & " vs " & FORMAT ( OnTimeAvg, "0.00" ) &
+    " for on-time orders (" & FORMAT ( LateAvg - OnTimeAvg, "+0.00;-0.00" ) & ")"

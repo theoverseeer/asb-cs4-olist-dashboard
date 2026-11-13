@@ -1,0 +1,26 @@
+{
+  "name": "ASB Colorblind-Safe",
+  "dataColors": ["#0072B2", "#D55E00", "#E69F00", "#56B4E9", "#009E73", "#999999", "#CC79A7", "#F0E442"],
+  "background": "#FFFFFF",
+  "foreground": "#333333",
+  "tableAccent": "#0072B2",
+  "good": "#0072B2",
+  "bad": "#D55E00",
+  "neutral": "#999999",
+  "maximum": "#0072B2",
+  "center": "#F2F2F2",
+  "minimum": "#C6DBEF",
+  "textClasses": {
+    "title":   { "fontFace": "Segoe UI Semibold", "fontSize": 14, "color": "#333333" },
+    "label":   { "fontFace": "Segoe UI", "fontSize": 10, "color": "#595959" },
+    "callout": { "fontFace": "Segoe UI Semibold", "fontSize": 28, "color": "#0072B2" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "gridlineStyle": [{ "gridlineColor": { "solid": { "color": "#E6E6E6" } } }],
+        "legend": [{ "show": true, "position": "Top" }]
+      }
+    }
+  }
+}

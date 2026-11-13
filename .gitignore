@@ -1,0 +1,17 @@
+# raw / large data (re-ingest with docker compose up -d)
+*.csv
+*.duckdb
+*.duckdb.wal
+asb_materials/
+data/
+exports/
+# secrets
+.env
+*.env
+# Python
+__pycache__/
+.venv/
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
