@@ -17,15 +17,15 @@
 
 > **Data source.** *Brazilian E-Commerce Public Dataset by Olist*, published on Kaggle: <https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce>. All credit for the data belongs to Olist and Kaggle.
 
-```mermaid
-flowchart LR
-    A[("Raw Olist CSV files")] -->|docker compose| B[("PostgreSQL<br/>schema kaggle")]
-    B -->|SQL| C["Staging and<br/>order-grain aggregates"]
-    C --> D["Semantic model<br/>2 fact + 4 dimension tables"]
-    D -->|Import| E["Power BI model<br/>and DAX measures"]
-    E --> F["4-page dashboard"]
-    F --> G["Insights and<br/>recommendations"]
-```
+  ```mermaid
+  flowchart TD
+      A[("Raw Olist CSV files")] -->|docker compose| B[("PostgreSQL, schema kaggle")]
+      B -->|SQL| C["Staging and order-grain aggregates"]
+      C --> D["Semantic model: 2 facts + 4 dimensions"]
+      D -->|Import| E["Power BI model and DAX"]
+      E --> F["4-page dashboard"]
+      F --> G["Insights and recommendations"]
+  ```
 
 ---
 
