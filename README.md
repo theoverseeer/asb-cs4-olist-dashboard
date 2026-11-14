@@ -235,14 +235,18 @@ Four pages share the same layout (top-rail, Z-pattern reading order: KPIs first,
 
 The dashboard file is `dashboard/olist_dashboard.pbix`.
 
-<!--
-After you add your screenshots to the screenshots/ folder, delete these comment markers and keep the lines below.
+
+
 
 ![Page 1: Executive overview](screenshots/page1_overview.png)
+
 ![Page 2: Customers](screenshots/page2_customers.png)
+
 ![Page 3: Products and sellers](screenshots/page3_products_sellers.png)
+
 ![Page 4: Delivery and experience](screenshots/page4_delivery_experience.png)
--->
+
+
 
 ## 10. Business insights
 Every figure below comes from `sql/02_validation_and_insights.sql` (saved in `docs/validation_output.txt`) and is reproduced in the dashboard. Figures marked **≈** are derived by multiplying two reported numbers. Each insight states what was observed, the evidence, and why it matters.
@@ -353,7 +357,7 @@ Average order value also differs by category. Among the 15 categories with the h
 ### Insight 4: Very few customers come back
 **Observation.** Most customers buy only once.
 
-**Evidence.** Only **2,888 of 94,990** customers with a valid order (**3.04 %**) bought again, averaging 2.11 orders each. Repeat customers spend less per order (R$ 145.82 vs R$ 161.18), rate their experience slightly higher (4.18 vs 4.11) and see fewer late deliveries (5.78 % vs 6.84 %).
+**Evidence.** Only **2,888 of 94,990** customers with a valid order (**3.04 %**) bought again, averaging 2.11 orders each. Repeat customers spend less per order (R$ 145.82 vs R$ 161.18), rate their experience slightly higher (4.18 vs 4.11) and see fewer late deliveries (5.78 % vs 6.84 %). *Note: the dashboard shows 4.17 for repeat customers because its measure includes canceled orders; the 4.18 here excludes them.*
 
 **Why it matters.** Growth depends almost entirely on winning new customers, so retention is an under-used lever.
 
@@ -407,7 +411,7 @@ See [section 11](#11-recommendations).
 - **Derived figures.** Late-order counts by state (≈) are delivered orders multiplied by the late rate, so they are rounded estimates; only the ten highest-rate states were ranked.
 - **Carriers.** The dataset has no carrier field, so carrier performance cannot be measured here; reviewing carriers is an action for the business, not a finding.
 - **Scope.** The data is anonymised and covers one marketplace. Findings are associations, not causal effects.
-
+- **Review scores.** Average review scores on the dashboard can differ from the SQL figures by about 0.01, because the DAX measure includes canceled orders and the SQL excludes them.
 ---
 
 <p align="center"><sub>Dataset: Olist and Kaggle, <a href="https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce">brazilian-ecommerce</a>. Prepared as part of the Analytics Solutions Bootcamp.</sub></p>
